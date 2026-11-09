@@ -1,0 +1,75 @@
+name: Corporate Mihomo ARM64
+on:
+  push:
+    branches: ['corp/tailscale-1.104.5']
+    tags: ['corp-v*']
+  pull_request:
+    branches: ['corp/tailscale-1.104.5']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: corp-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache: true
+      - name: Verify dependency and corporate route preferences
+        env:
+          CGO_ENABLED: '0'
+        run: go test -mod=readonly -tags with_gvisor ./adapter/outbound -run '^TestCorpTailscale' -count=1
+      - name: Verify Tailscale network integration
+        run: >-
+          go test -mod=readonly -timeout 180s
+          tailscale.com/net/tsdial tailscale.com/net/dnscache
+          tailscale.com/net/netmon tailscale.com/net/dns/resolver
+          tailscale.com/net/dnsfallback tailscale.com/net/netutil
+          tailscale.com/net/portmapper tailscale.com/net/netcheck
+          tailscale.com/wgengine/netstack tailscale.com/types/nettype
+          tailscale.com/tsnet
+      - name: Build XKeenUI asset
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="corp-v0.0.0-check-${GITHUB_SHA::12}"
+          if [ "$REF_TYPE" = tag ]; then version="$REF_NAME"; fi
+          scripts/build-corp-release.sh "$version"
+      - name: Smoke test ARM64 binary
+        run: |
+          gzip -dc dist/mihomo-linux-arm64-*.gz > /tmp/mihomo-check
+          chmod +x /tmp/mihomo-check
+          /tmp/mihomo-check -v
+          mkdir -p /tmp/mihomo-smoke
+          printf 'mixed-port: 0\nmode: rule\nrules:\n  - MATCH,DIRECT\n' > /tmp/mihomo-smoke/config.yaml
+          /tmp/mihomo-check -t -d /tmp/mihomo-smoke -f /tmp/mihomo-smoke/config.yaml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mihomo-arm64
+          path: dist/*
+  release:
+    if: startsWith(github.ref, 'refs/tags/corp-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mihomo-arm64
+          path: dist
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/* --verify-tag --prerelease \
+            --title "Mihomo $RELEASE_TAG — Tailscale 1.104.5" \
+            --notes 'Linux ARM64 build for XKeenUI with embedded Tailscale 1.104.5 and Mihomo networking hooks. Compilation, unit tests and binary smoke tests pass before publication. Corporate Headscale connectivity has not been tested on the router. No router deployment is performed by this workflow.'

@@ -21,15 +21,15 @@ import (
 	"github.com/metacubex/mihomo/dns"
 	"github.com/metacubex/mihomo/log"
 
-	ts "github.com/metacubex/tailscale"
-	"github.com/metacubex/tailscale/envknob"
-	"github.com/metacubex/tailscale/hostinfo"
-	"github.com/metacubex/tailscale/ipn"
-	"github.com/metacubex/tailscale/net/netmon"
-	"github.com/metacubex/tailscale/tailcfg"
-	"github.com/metacubex/tailscale/tsnet"
 	D "github.com/miekg/dns"
 	"github.com/samber/lo"
+	ts "tailscale.com"
+	"tailscale.com/envknob"
+	"tailscale.com/hostinfo"
+	"tailscale.com/ipn"
+	"tailscale.com/net/netmon"
+	"tailscale.com/tailcfg"
+	"tailscale.com/tsnet"
 )
 
 type Tailscale struct {
