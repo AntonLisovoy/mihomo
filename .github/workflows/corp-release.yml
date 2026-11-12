@@ -40,7 +40,7 @@ jobs:
           go test -mod=readonly -tags with_gvisor -timeout 180s -count=1 \
             ./adapter/inbound ./common/convert ./component/age ./transport/snell
           go test -mod=readonly -tags with_gvisor -timeout 180s -count=1 \
-            ./listener/inbound -run '^(TestNewMieru|TestInboundSnell_V6|TestInboundShadowsocks)'
+            ./listener/inbound -run '^(TestNewMieru|TestInboundSnell_V6|TestInboundShadowSocks)'
       - name: Build XKeenUI asset
         env:
           REF_TYPE: ${{ github.ref_type }}
