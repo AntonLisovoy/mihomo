@@ -33,6 +33,14 @@ jobs:
           tailscale.com/net/portmapper tailscale.com/net/netcheck
           tailscale.com/wgengine/netstack tailscale.com/types/nettype
           tailscale.com/tsnet
+      - name: Verify upstream release regressions
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          go test -mod=readonly -tags with_gvisor -timeout 180s -count=1 \
+            ./adapter/inbound ./common/convert ./component/age ./transport/snell
+          go test -mod=readonly -tags with_gvisor -timeout 180s -count=1 \
+            ./listener/inbound -run '^(TestNewMieru|TestInboundSnell_V6|TestInboundShadowsocks)'
       - name: Build XKeenUI asset
         env:
           REF_TYPE: ${{ github.ref_type }}
