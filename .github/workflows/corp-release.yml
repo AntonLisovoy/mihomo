@@ -1,10 +1,10 @@
 name: Corporate Mihomo ARM64
 on:
   push:
-    branches: ['corp/tailscale-1.104.5']
-    tags: ['corp-v*']
+    branches: ['main', 'corp/tailscale-1.104.5']
+    tags: ['v*', 'corp-v*']
   pull_request:
-    branches: ['corp/tailscale-1.104.5']
+    branches: ['main', 'corp/tailscale-1.104.5']
   workflow_dispatch:
 permissions:
   contents: read
@@ -46,7 +46,7 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           REF_NAME: ${{ github.ref_name }}
         run: |
-          version="corp-v0.0.0-check-${GITHUB_SHA::12}"
+          version="v0.0.0"
           if [ "$REF_TYPE" = tag ]; then version="$REF_NAME"; fi
           scripts/build-corp-release.sh "$version"
       - name: Smoke test ARM64 binary
@@ -62,7 +62,7 @@ jobs:
           name: mihomo-arm64
           path: dist/*
   release:
-    if: startsWith(github.ref, 'refs/tags/corp-v')
+    if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/corp-v')
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -72,12 +72,14 @@ jobs:
         with:
           name: mihomo-arm64
           path: dist
-      - name: Publish prerelease
+      - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$RELEASE_TAG" dist/* --verify-tag --prerelease \
+          release_flags=(--prerelease)
+          if [[ "$RELEASE_TAG" == v* ]]; then release_flags=(--latest); fi
+          gh release create "$RELEASE_TAG" dist/* --verify-tag "${release_flags[@]}" \
             --title "Mihomo $RELEASE_TAG — Tailscale 1.104.5" \
             --notes 'Linux ARM64 build for XKeenUI with embedded Tailscale 1.104.5 and Mihomo networking hooks. Compilation, unit tests and binary smoke tests pass before publication. Corporate Headscale connectivity has not been tested on the router. No router deployment is performed by this workflow.'

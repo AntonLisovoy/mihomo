@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-version=${1:?Usage: build-corp-release.sh corp-vVERSION}
-[[ "$version" =~ ^corp-v[0-9][A-Za-z0-9._-]*$ ]] || { echo 'Invalid corporate release tag' >&2; exit 2; }
+version=${1:?Usage: build-corp-release.sh vX.Y.Z or corp-vVERSION}
+[[ "$version" =~ ^(v[0-9]+\.[0-9]+\.[0-9]+|corp-v[0-9][A-Za-z0-9._-]*)$ ]] || { echo 'Invalid release tag' >&2; exit 2; }
 export CGO_ENABLED=0
 mkdir -p dist
 build_time=$(git show -s --format=%cI HEAD)

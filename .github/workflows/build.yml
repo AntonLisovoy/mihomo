@@ -25,6 +25,7 @@ env:
   REGISTRY: docker.io
 jobs:
   build:
+    if: github.repository == 'MetaCubeX/mihomo'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -329,7 +330,7 @@ jobs:
 
   Upload-Prerelease:
     permissions: write-all
-    if: ${{ github.event_name != 'workflow_dispatch' && github.ref_type == 'branch' && !startsWith(github.event_name, 'pull_request') }}
+    if: ${{ github.repository == 'MetaCubeX/mihomo' && github.event_name != 'workflow_dispatch' && github.ref_type == 'branch' && !startsWith(github.event_name, 'pull_request') }}
     needs: [build]
     runs-on: ubuntu-latest
     steps:
@@ -387,7 +388,7 @@ jobs:
 
   Upload-Release:
     permissions: write-all
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version != '' }}
+    if: ${{ github.repository == 'MetaCubeX/mihomo' && github.event_name == 'workflow_dispatch' && github.event.inputs.version != '' }}
     needs: [build]
     runs-on: ubuntu-latest
     steps:
@@ -445,7 +446,7 @@ jobs:
           body_path: release.md
 
   Docker:
-    if: ${{ !startsWith(github.event_name, 'pull_request') }}
+    if: ${{ github.repository == 'MetaCubeX/mihomo' && !startsWith(github.event_name, 'pull_request') }}
     permissions: write-all
     needs: [build]
     runs-on: ubuntu-latest
